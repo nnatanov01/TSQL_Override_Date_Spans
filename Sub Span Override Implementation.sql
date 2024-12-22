@@ -25,7 +25,7 @@ VALUES
 ,(2,1,'2024-06-01','2025-01-01','SubB')
 
 ;WITH all_dates AS
-(SELECT 'sub' AS src,sub.MainSpanId,sub.Descrip,sub.startdate,sub.enddate,x.date_point,x.type
+(SELECT 'sub' AS src,sub.MainSpanId,sub.Descrip,sub.startdate,sub.enddate,x.date_point,x.type,0 as Override_Order
 
 FROM #SUBSPANS sub
 CROSS APPLY
@@ -33,7 +33,7 @@ CROSS APPLY
 
 UNION ALL
 
-SELECT 'main' AS src, t.Id,t.Descrip,t.startdate,t.enddate,x.date_point,x.type
+SELECT 'main' AS src, t.Id,t.Descrip,t.startdate,t.enddate,x.date_point,x.type,1 as Override_Order
 FROM #MAINSPANS t
 CROSS APPLY
 	 (VALUES (t.startdate,1),(dateadd(day,1,t.enddate),-1))x(date_point,type)
@@ -46,7 +46,7 @@ SELECT
 	MainSpanId,
 	TYPE
         ,date_point
-		,LAG(date_point) OVER (PARTITION BY MainSpanId ORDER BY date_point) AS Start_Date
+		,LAG(date_point) OVER (PARTITION BY MainSpanId ORDER BY date_point, Override_Order) AS Start_Date
 		,DATEADD(DAY, -1, date_point) AS end_date
 		,Descrip = CASE WHEN
 		SUM(type) over (PARTITION BY MainSpanId,src ORDER BY date_point,TYPE 
